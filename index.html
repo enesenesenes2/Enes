@@ -251,7 +251,6 @@
         <p>Disiplin yeteneği yener.</p>
     </header>
 
-    <!-- 1. BESLENME MODÜLÜ -->
     <div class="section-card">
         <div class="section-title">
             <span>Makro & Kalori Takibi</span>
@@ -286,7 +285,6 @@
         <div id="food-list"></div>
     </div>
 
-    <!-- 2. ANTRENMAN PROGRAMI MODÜLÜ -->
     <div class="section-card">
         <div class="section-title">
             <span>Program Listesi & Tik Atma</span>
@@ -301,7 +299,6 @@
         <div id="template-workout-list"></div>
     </div>
 
-    <!-- 3. SUPPLEMENT MODÜLÜ -->
     <div class="section-card">
         <div class="section-title">Animaljoy & Supplement Odası</div>
         <div class="check-item">
@@ -315,7 +312,6 @@
         </div>
     </div>
 
-    <!-- 4. ZİHİN VE ALIŞKANLIK TAKİBİ -->
     <div class="section-card">
         <div class="section-title">Zihin Netliği & Alışkanlık</div>
         
@@ -339,10 +335,9 @@
         </div>
     </div>
 
-    <!-- 5. ENTEGRE YAPAY ZEKA ODASI (CORS KÖPRÜLÜ YENİ SÜRÜM) -->
     <div class="section-card" style="border-color: #8b5cf6;">
-        <div class="section-title" style="color: #c084fc;">🤖 AI Odak & Spor Koçu (Canlı)</div>
-        <input type="password" id="api-key" placeholder="Google API Anahtarını Buraya Yapıştır (AQ... ile başlayan)" style="font-size: 0.8rem; margin-bottom: 8px;">
+        <div class="section-title" style="color: #c084fc;">🤖 AI Odak & Spor Koçu (Groq)</div>
+        <input type="password" id="api-key" placeholder="Groq API Anahtarını Buraya Yapıştır (gsk_...)" style="font-size: 0.8rem; margin-bottom: 8px;">
         
         <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">Soru sor veya aşağıya Reels tarifini yapıştır:</div>
         <textarea id="ai-prompt" placeholder="Örn: Bugün enerjim çok düşük... VEYA Reels tarif metnini buraya yapıştır..."></textarea>
@@ -357,13 +352,13 @@
     <script>
         window.onload = function() {
             loadNutrition(); loadSupps(); loadStreak(); loadShower(); renderTemplateWorkouts();
-            if(localStorage.getItem('gemini_key_v9')) {
-                document.getElementById('api-key').value = localStorage.getItem('gemini_key_v9');
+            if(localStorage.getItem('groq_key_final')) {
+                document.getElementById('api-key').value = localStorage.getItem('groq_key_final');
             }
         };
 
         // --- BESLENME FONKSİYONLARI ---
-        let foods = JSON.parse(localStorage.getItem('foods_v9')) || [];
+        let foods = JSON.parse(localStorage.getItem('foods_final')) || [];
         const CALORIE_TARGET = 2100; const PROTEIN_TARGET = 150;
 
         function addFood() {
@@ -383,7 +378,7 @@
         }
 
         function saveAndRefreshNutrition() {
-            localStorage.setItem('foods_v9', JSON.stringify(foods)); loadNutrition();
+            localStorage.setItem('foods_final', JSON.stringify(foods)); loadNutrition();
         }
 
         function loadNutrition() {
@@ -400,22 +395,22 @@
         }
 
         function deleteFood(index) { foods.splice(index, 1); saveAndRefreshNutrition(); }
-        function clearNutrition() { if(confirm('Sıfırlansın mı?')) { foods = []; localStorage.removeItem('foods_v9'); loadNutrition(); } }
+        function clearNutrition() { if(confirm('Sıfırlansın mı?')) { foods = []; localStorage.removeItem('foods_final'); loadNutrition(); } }
 
-        // --- ANTRENMAN MANTIĞI ---
+        // --- ANTRENMAN PROGRAMI ---
         const programTemplates = {
             itish: ["Bench Press (4 Set)", "Incline Dumbbell Press (3 Set)", "Push-up Bar Şınav (Max Rep)", "Overhead Press (3 Set)", "Triceps Pushdown (4 Set)"],
             cekish: ["Barfiks / Lat Pulldown (4 Set)", "Dumbbell Row (3 Set)", "Face Pull (3 Set)", "Biceps Curl (4 Set)", "Hammer Curl (3 Set)"],
             bacak: ["Squat (4 Set)", "Leg Press (3 Set)", "Romanian Deadlift (3 Set)", "Calf Raise (4 Set)", "Plank (3 Set Azami)"]
         };
-        let currentActiveWorkout = JSON.parse(localStorage.getItem('active_workout_v9')) || [];
+        let currentActiveWorkout = JSON.parse(localStorage.getItem('active_workout_final')) || [];
         function loadWorkoutTemplate(type) {
             currentActiveWorkout = programTemplates[type].map(name => ({ name, done: false }));
-            localStorage.setItem('active_workout_v9', JSON.stringify(currentActiveWorkout)); renderTemplateWorkouts();
+            localStorage.setItem('active_workout_final', JSON.stringify(currentActiveWorkout)); renderTemplateWorkouts();
         }
         function toggleWorkoutItem(index) {
             currentActiveWorkout[index].done = !currentActiveWorkout[index].done;
-            localStorage.setItem('active_workout_v9', JSON.stringify(currentActiveWorkout));
+            localStorage.setItem('active_workout_final', JSON.stringify(currentActiveWorkout));
         }
         function renderTemplateWorkouts() {
             const area = document.getElementById('template-workout-list'); area.innerHTML = '';
@@ -431,64 +426,71 @@
         // --- SUPPLEMENT ---
         function saveSupps() {
             const supps = { protein: document.getElementById('supp-protein').checked, creatine: document.getElementById('supp-creatine').checked, vitamin: document.getElementById('supp-vitamin').checked };
-            localStorage.setItem('supps_v9', JSON.stringify(supps));
+            localStorage.setItem('supps_final', JSON.stringify(supps));
         }
         function loadSupps() {
-            const supps = JSON.parse(localStorage.getItem('supps_v9')) || { protein: false, creatine: false, vitamin: false };
+            const supps = JSON.parse(localStorage.getItem('supps_final')) || { protein: false, creatine: false, vitamin: false };
             document.getElementById('supp-protein').checked = supps.protein; document.getElementById('supp-creatine').checked = supps.creatine; document.getElementById('supp-vitamin').checked = supps.vitamin;
         }
 
         // --- STREAK & SHOWER ---
-        let streak = Number(localStorage.getItem('streak_v9')) || 0;
+        let streak = Number(localStorage.getItem('streak_final')) || 0;
         function loadStreak() { document.getElementById('streak-val').innerText = streak + " Gün"; }
         function updateStreak(val) {
             if(val === -1) { if(confirm('Sıfırlansın mı?')) streak = 0; } else { streak += 1; }
-            localStorage.setItem('streak_v9', streak); loadStreak();
+            localStorage.setItem('streak_final', streak); loadStreak();
         }
-        let showerCount = Number(localStorage.getItem('shower_v9')) || 0;
+        let showerCount = Number(localStorage.getItem('shower_final')) || 0;
         function loadShower() { document.getElementById('shower-val').innerText = showerCount + " Kez"; }
-        function addShower() { showerCount += 1; localStorage.setItem('shower_v9', showerCount); loadShower(); }
+        function addShower() { showerCount += 1; localStorage.setItem('shower_final', showerCount); loadShower(); }
 
-        // --- CANLI VE GERÇEK YAPAY ZEKA SİSTEMİ (CORS KÖPRÜLÜ) ---
+        // --- HATA VERMEYEN KÖPRÜLÜ GROQ SİSTEMİ ---
         async function askAI(isRecipeMode) {
             const apiKey = document.getElementById('api-key').value.trim();
             const promptInput = document.getElementById('ai-prompt').value;
             const responseArea = document.getElementById('ai-response');
 
-            if(!apiKey) return alert('Lütfen önce API anahtarını yapıştırın.');
+            if(!apiKey) return alert('Lütfen gsk_ ile başlayan Groq anahtarını yapıştırın.');
             if(!promptInput) return alert('Lütfen metin alanını boş bırakmayın.');
 
-            localStorage.setItem('gemini_key_v9', apiKey);
+            localStorage.setItem('groq_key_final', apiKey);
             responseArea.style.display = 'block';
-            responseArea.innerText = isRecipeMode ? 'Yapay zeka tarifi inceliyor, kalori hesaplıyor...' : 'Koç düşünüyor...';
+            responseArea.innerText = isRecipeMode ? 'Llama 3 tarifi inceliyor...' : 'Koç strateji kuruyor...';
 
-            let systemInstruction = "Sen sert, disiplinli, motivasyon veren bir spor ve gelişim koçusun. Kısa, net, samimi ve gaza getirici cevaplar ver.";
+            let systemMsg = "Sen sert, disiplinli, motivasyon veren bir spor ve gelişim koçusun. Kısa, net, samimi ve gaza getirici Türkçe cevaplar ver.";
             if(isRecipeMode) {
-                systemInstruction = "Sen sadece tarifleri analiz eden bir robotsun. Verilen tarifi incele, toplam kalori ve protein değerlerini bul. Bana SADECE şu formatta tek bir satır yanıt ver, başka tek bir kelime bile ekleme: Yemek İsmi,ToplamKalori,ToplamProtein Örnek çıktı: Proteinli Yulaf,380,24";
+                systemMsg = "Sen sadece tarifleri analiz eden bir robotsun. Verilen tarifi incele, toplam kalori ve protein değerlerini hesapla. Bana SADECE şu formatta tek bir satır yanıt ver, başka hiçbir kelime ekleme: Yemek İsmi,ToplamKalori,ToplamProtein Örnek çıktı: Protein Yulaf,410,25";
             }
 
             try {
-                // TARAYICI ENGELİNİ AŞMAK İÇİN ARAYA AKILLI BİR KÖPRÜ (PROXY) KOYUYORUZ
-                const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                // Tarayıcı engelini tamamen kırmak için Groq isteğini de CORS köprüsünden geçiriyoruz
+                const targetUrl = "https://api.groq.com/openai/v1/chat/completions";
                 const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
 
                 const response = await fetch(proxyUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: promptInput }] }],
-                        systemInstruction: { parts: [{ text: systemInstruction }] }
+                        model: "llama-3.1-70b-versatile",
+                        messages: [
+                            { role: "system", content: systemMsg },
+                            { role: "user", content: promptInput }
+                        ],
+                        temperature: 0.3
                     })
                 });
 
                 const data = await response.json();
                 
                 if(data.error) {
-                    responseArea.innerText = "Hata: " + data.error.message;
+                    responseArea.innerText = "Sistem Hatası: " + data.error.message;
                     return;
                 }
 
-                const reply = data.candidates[0].content.parts[0].text.trim();
+                const reply = data.choices[0].message.content.trim();
 
                 if(isRecipeMode) {
                     const parts = reply.split(',');
@@ -499,17 +501,16 @@
                         
                         foods.push({ name: `🤖 AI: ${rName}`, cal: rCal, protein: rProt });
                         saveAndRefreshNutrition();
-                        responseArea.innerText = `Tarif Eklendi!\n${rName}: ${rCal} kcal / ${rProt}g Protein`;
+                        responseArea.innerText = `Tarif Başarıyla Eklendi!\n${rName}: ${rCal} kcal / ${rProt}g Protein`;
                         document.getElementById('ai-prompt').value = '';
                     } else {
-                        // Eğer yapay zeka bazen formatı bozarsa düz metin olarak bassın diye koruma:
-                        responseArea.innerText = "Yapay zeka tarifi tam ayıramadı ama cevabı şu şekilde:\n" + reply;
+                        responseArea.innerText = "Yapay zeka tarifi tam ayıramadı ama gelen cevap:\n" + reply;
                     }
                 } else {
                     responseArea.innerText = reply;
                 }
             } catch (error) {
-                responseArea.innerText = 'Köprü bağlantısında hata oluştu! Lütfen tekrar deneyin.';
+                responseArea.innerText = 'Bağlantı hatası! İnterneti veya API anahtarını kontrol edip tekrar deneyin.';
             }
         }
     </script>
