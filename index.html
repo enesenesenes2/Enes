@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disiplin & Rutin Takip</title>
+    <title>Disiplin & AI Rutin Takip</title>
     <style>
         :root {
             --bg-color: #0b0b0e;
@@ -110,7 +110,7 @@
             margin-bottom: 10px;
         }
 
-        input {
+        input, textarea {
             background-color: #1f1f2e;
             border: 1px solid #2e2e42;
             color: white;
@@ -118,6 +118,12 @@
             border-radius: 8px;
             font-size: 0.9rem;
             flex: 1;
+        }
+
+        textarea {
+            resize: none;
+            height: 60px;
+            font-family: inherit;
         }
 
         button {
@@ -223,6 +229,19 @@
             padding: 8px;
             font-size: 0.8rem;
         }
+
+        #ai-response {
+            background-color: #1a1a26;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-top: 10px;
+            border-left: 3px solid #8b5cf6;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-line;
+        }
     </style>
 </head>
 <body>
@@ -232,7 +251,6 @@
         <p>Disiplin yeteneği yener.</p>
     </header>
 
-    <!-- 1. BESLENME MODÜLÜ -->
     <div class="section-card">
         <div class="section-title">
             <span>Makro & Kalori Takibi</span>
@@ -267,7 +285,6 @@
         <div id="food-list"></div>
     </div>
 
-    <!-- 2. ANTRENMAN PROGRAMI MODÜLÜ -->
     <div class="section-card">
         <div class="section-title">
             <span>Program Listesi & Tik Atma</span>
@@ -282,7 +299,6 @@
         <div id="template-workout-list"></div>
     </div>
 
-    <!-- 3. SUPPLEMENT MODÜLÜ -->
     <div class="section-card">
         <div class="section-title">Animaljoy & Supplement Odası</div>
         <div class="check-item">
@@ -296,7 +312,6 @@
         </div>
     </div>
 
-    <!-- 4. ZİHİN VE ALIŞKANLIK TAKİBİ -->
     <div class="section-card">
         <div class="section-title">Zihin Netliği & Alışkanlık</div>
         
@@ -320,6 +335,20 @@
         </div>
     </div>
 
+    <div class="section-card" style="border-color: #8b5cf6;">
+        <div class="section-title" style="color: #c084fc;">🤖 AI Odak & Spor Koçu</div>
+        <input type="password" id="api-key" placeholder="Gemini API Anahtarını Buraya Kaydet (Ücretsiz)" style="font-size: 0.8rem; margin-bottom: 8px;">
+        
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">Soru sor veya aşağıya Reels tarifini yapıştır:</div>
+        <textarea id="ai-prompt" placeholder="Örn: Bugün göğüs çalışırken omzum ağrıdı ne yapmalıyım? VEYA Reels tarif metnini buraya kopyala..."></textarea>
+        
+        <div class="action-grid" style="grid-template-columns: 1fr 1fr; margin-top: 8px;">
+            <button onclick="askAI(false)" style="background-color: #8b5cf6;">Koça Soru Sor</button>
+            <button onclick="askAI(true)" style="background-color: var(--success-color);">Tarifi Kaloriye Çevir</button>
+        </div>
+        <div id="ai-response" style="display: none;">Koçun cevabı bekleniyor...</div>
+    </div>
+
     <script>
         window.onload = function() {
             loadNutrition();
@@ -327,10 +356,13 @@
             loadStreak();
             loadShower();
             renderTemplateWorkouts();
+            if(localStorage.getItem('gemini_key_v5')) {
+                document.getElementById('api-key').value = localStorage.getItem('gemini_key_v5');
+            }
         };
 
         // --- BESLENME FONKSİYONLARI ---
-        let foods = JSON.parse(localStorage.getItem('foods_v4')) || [];
+        let foods = JSON.parse(localStorage.getItem('foods_v5')) || [];
         const CALORIE_TARGET = 2100;
         const PROTEIN_TARGET = 150;
 
@@ -356,7 +388,7 @@
         }
 
         function saveAndRefreshNutrition() {
-            localStorage.setItem('foods_v4', JSON.stringify(foods));
+            localStorage.setItem('foods_v5', JSON.stringify(foods));
             loadNutrition();
         }
 
@@ -381,7 +413,7 @@
 
         function clearNutrition() {
             if(confirm('Bugünkü tüm yemekleri sıfırlamak istiyor musun?')) {
-                foods = []; localStorage.removeItem('foods_v4'); loadNutrition();
+                foods = []; localStorage.removeItem('foods_v5'); loadNutrition();
             }
         }
 
@@ -392,17 +424,17 @@
             bacak: ["Squat (4 Set)", "Leg Press (3 Set)", "Romanian Deadlift (3 Set)", "Calf Raise (4 Set)", "Plank (3 Set Azami)"]
         };
 
-        let currentActiveWorkout = JSON.parse(localStorage.getItem('active_workout_v4')) || [];
+        let currentActiveWorkout = JSON.parse(localStorage.getItem('active_workout_v5')) || [];
 
         function loadWorkoutTemplate(type) {
             currentActiveWorkout = programTemplates[type].map(name => ({ name, done: false }));
-            localStorage.setItem('active_workout_v4', JSON.stringify(currentActiveWorkout));
+            localStorage.setItem('active_workout_v5', JSON.stringify(currentActiveWorkout));
             renderTemplateWorkouts();
         }
 
         function toggleWorkoutItem(index) {
             currentActiveWorkout[index].done = !currentActiveWorkout[index].done;
-            localStorage.setItem('active_workout_v4', JSON.stringify(currentActiveWorkout));
+            localStorage.setItem('active_workout_v5', JSON.stringify(currentActiveWorkout));
         }
 
         function renderTemplateWorkouts() {
@@ -428,23 +460,23 @@
                 creatine: document.getElementById('supp-creatine').checked,
                 vitamin: document.getElementById('supp-vitamin').checked
             };
-            localStorage.setItem('supps_v4', JSON.stringify(supps));
+            localStorage.setItem('supps_v5', JSON.stringify(supps));
         }
         function loadSupps() {
-            const supps = JSON.parse(localStorage.getItem('supps_v4')) || { protein: false, creatine: false, vitamin: false };
+            const supps = JSON.parse(localStorage.getItem('supps_v5')) || { protein: false, creatine: false, vitamin: false };
             document.getElementById('supp-protein').checked = supps.protein;
             document.getElementById('supp-creatine').checked = supps.creatine;
             document.getElementById('supp-vitamin').checked = supps.vitamin;
         }
 
         // --- STREAK (ZİNCİRİ KIRMA) ---
-        let streak = Number(localStorage.getItem('streak_v4')) || 0;
+        let streak = Number(localStorage.getItem('streak_v5')) || 0;
         function loadStreak() { document.getElementById('streak-val').innerText = streak + " Gün"; }
         function updateStreak(val) {
             if(val === -1) {
                 if(confirm('Kötü alışkanlık sayacı sıfırlansın mı? Zincir kırılacak.')) { streak = 0; }
             } else { streak += 1; }
-            localStorage.setItem('streak_v4', streak); loadStreak();
+            localStorage.setItem('streak_v5', streak); loadStreak();
         }
 
         // --- SOĞUK DUŞ SAYAÇ ---
@@ -454,6 +486,62 @@
             showerCount += 1;
             localStorage.setItem('shower_v4', showerCount);
             loadShower();
+        }
+
+        // --- ADVANCED AI SİSTEMİ (SORU-CEVAP & TARİF PARSER) ---
+        async function askAI(isRecipeMode) {
+            const apiKey = document.getElementById('api-key').value;
+            const promptInput = document.getElementById('ai-prompt').value;
+            const responseArea = document.getElementById('ai-response');
+
+            if(!apiKey) return alert('Lütfen önce ücretsiz bir Gemini API anahtarı yapıştırıp kaydedin.');
+            if(!promptInput) return alert('Lütfen metin alanını boş bırakmayın.');
+
+            localStorage.setItem('gemini_key_v5', apiKey);
+            responseArea.style.display = 'block';
+            responseArea.innerText = isRecipeMode ? 'Yapay zeka tarifi inceliyor, kalori hesaplıyor...' : 'Koç düşünüyor, strateji kuruyor...';
+
+            let systemInstruction = "Sen sert, disiplinli, motivasyon veren bir spor ve gelişim koçusun. Hedefi estetik ve güce ulaşmak olan, disipline önem veren, soğuk duş alan genç bir sporcuya kısa, net, samimi ve gaza getirici cevaplar vermelisin.";
+            
+            if(isRecipeMode) {
+                systemInstruction = "Sen sadece tarifleri analiz eden bir robotsun. Sana verilen yemek tarifi metnini incele, içindeki malzemelerin ortalama kalori ve protein değerlerini topla. Bana SADECE şu formatta tek bir satır yanıt ver, başka hiçbir kelime veya açıklama ekleme: Yemek İsmi,ToplamKalori,ToplamProtein Örnek çıktı: Fit Yulaf Lapası,450,22";
+            }
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptInput }] }],
+                        systemInstruction: { parts: [{ text: systemInstruction }] }
+                    })
+                });
+
+                const data = await response.json();
+                const reply = data.candidates[0].content.parts[0].text.trim();
+
+                if(isRecipeMode) {
+                    // Yapay zekadan gelen "YemekAdı,Kalori,Protein" formatını parçalıyoruz
+                    const parts = reply.split(',');
+                    if(parts.length >= 3) {
+                        const rName = parts[0];
+                        const rCal = Number(parts[1]) || 0;
+                        const rProt = Number(parts[2]) || 0;
+                        
+                        foods.push({ name: `🤖 AI: ${rName}`, cal: rCal, protein: rProt });
+                        saveAndRefreshNutrition();
+                        responseArea.innerText = `Tarif Eklendi!\n${rName}: ${rCal} kcal / ${rProt}g Protein`;
+                        document.getElementById('ai-prompt').value = '';
+                    } else {
+                        responseArea.innerText = "Yapay zeka tarifi tam ayrıştıramadı. Metni daha net kopyalayıp tekrar deneyin. Gelen Ham Cevap: " + reply;
+                    }
+                } else {
+                    responseArea.innerText = reply;
+                }
+            } catch (error) {
+                responseArea.innerText = 'Hata oluştu! API anahtarını veya internet bağlantını kontrol et.';
+            }
         }
     </script>
 </body>
