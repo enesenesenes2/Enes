@@ -68,4 +68,175 @@
             <span id="nutrition-summary">0 / 2100 kcal</span>
             <span id="protein-summary">0g / 150g Protein</span>
         </div>
-        <div class="progress-container
+        <div class="progress-container"><div class="progress-bar" id="protein-bar"></div></div>
+        <div class="input-group">
+            <input type="text" id="food-name" placeholder="Yemek Adı">
+            <input type="number" id="food-weight" placeholder="Gram (g)" style="max-width: 80px;">
+        </div>
+        <div class="input-group">
+            <input type="number" id="food-cal" placeholder="Kalori">
+            <input type="number" id="food-protein" placeholder="Protein (g)">
+            <button onclick="addFood()" style="background-color: var(--success-color);">Ekle</button>
+        </div>
+        <div id="food-list"></div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">
+            <span>Cardio & Adım Sayacı</span>
+            <button onclick="clearSteps()" class="delete-btn">Sıfırla</button>
+        </div>
+        <div class="summary-text">
+            <span id="step-summary">0 / 10,000 Adım</span>
+            <span id="step-percent">%0 Tamamlandı</span>
+        </div>
+        <div class="progress-container"><div class="progress-bar" id="step-bar" style="background-color: #38bdf8;"></div></div>
+        <div class="input-group">
+            <input type="number" id="step-input" placeholder="Bugünkü adım miktarını gir">
+            <button onclick="addSteps()" style="background-color: #0284c7;">Kaydet</button>
+        </div>
+        <div id="step-history-list"></div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title"><span>Program Listesi & Tik Atma</span></div>
+        <div class="quick-tags">
+            <span class="tag-btn" onclick="loadWorkoutTemplate('itish')">İtiş Günü Yükle</span>
+            <span class="tag-btn" onclick="loadWorkoutTemplate('cekish')">Çekiş Günü Yükle</span>
+            <span class="tag-btn" onclick="loadWorkoutTemplate('bacak')">Bacak Günü Yükle</span>
+        </div>
+        <div id="template-workout-list"></div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">Animaljoy & Supplement Odası</div>
+        <div class="check-item"><label><input type="checkbox" id="supp-protein" onchange="saveSupps()"> Animaljoy Protein Tozu</label></div>
+        <div class="check-item"><label><input type="checkbox" id="supp-creatine" onchange="saveSupps()"> Kreatin (5g)</label></div>
+        <div class="check-item"><label><input type="checkbox" id="supp-vitamin" onchange="saveSupps()"> Vitamin / Omega 3</label></div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">Zihin Netliği & Alışkanlık</div>
+        <div class="grid-two">
+            <div class="stat-box"><div style="font-size: 0.8rem; color: var(--text-muted);">Zinciri Kırma</div><div class="stat-val" id="streak-val">0 Gün</div></div>
+            <div class="stat-box"><div style="font-size: 0.8rem; color: var(--text-muted);">Soğuk Duş</div><div class="stat-val blue-val" id="shower-val">0 Kez</div></div>
+        </div>
+        <div class="action-grid">
+            <button onclick="updateStreak(-1)" style="background-color: var(--danger-color);">Süreci Sıfırla</button>
+            <button onclick="updateStreak(1)" style="background-color: var(--success-color);">+1 Temiz Gün</button>
+        </div>
+        <div class="action-grid" style="grid-template-columns: 1fr; margin-top: 6px;">
+            <button onclick="addShower()" style="background-color: #0284c7;">⚡ Soğuk Duş Alındı</button>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() { loadNutrition(); loadSteps(); loadSupps(); loadStreak(); loadShower(); renderTemplateWorkouts(); };
+
+        // --- BESLENME ---
+        let foods = JSON.parse(localStorage.getItem('foods_v13')) || [];
+        const CALORIE_TARGET = 2100; const PROTEIN_TARGET = 150;
+
+        function addFood() {
+            const name = document.getElementById('food-name').value;
+            const weight = document.getElementById('food-weight').value || '0';
+            const cal = Number(document.getElementById('food-cal').value) || 0;
+            const protein = Number(document.getElementById('food-protein').value) || 0;
+            if(!name) return alert('Yemek adı girmelisin.');
+            foods.push({ name: `${name} (${weight}g)`, cal, protein }); saveAndRefreshNutrition();
+            document.getElementById('food-name').value = ''; document.getElementById('food-weight').value = '';
+            document.getElementById('food-cal').value = ''; document.getElementById('food-protein').value = '';
+        }
+        function quickAdd(name, weight, cal, protein) { foods.push({ name: `${name} (${weight}g)`, cal, protein }); saveAndRefreshNutrition(); }
+        function saveAndRefreshNutrition() { localStorage.setItem('foods_v13', JSON.stringify(foods)); loadNutrition(); }
+        function loadNutrition() {
+            const list = document.getElementById('food-list'); list.innerHTML = '';
+            let totalCal = 0; let totalProt = 0;
+            foods.forEach((f, index) => {
+                totalCal += f.cal; totalProt += f.protein;
+                list.innerHTML += `<div class="list-item"><span>${f.name} - ${f.cal} kcal / ${f.protein}g P</span><button class="delete-btn" onclick="deleteFood(${index})">Sil</button></div>`;
+            });
+            document.getElementById('nutrition-summary').innerText = `${totalCal} / ${CALORIE_TARGET} kcal`;
+            document.getElementById('protein-summary').innerText = `${totalProt}g / ${PROTEIN_TARGET}g Protein`;
+            document.getElementById('protein-bar').style.width = Math.min((totalProt / PROTEIN_TARGET) * 100, 100) + '%';
+        }
+        function deleteFood(index) { foods.splice(index, 1); saveAndRefreshNutrition(); }
+        function clearNutrition() { if(confirm('Sıfırlansın mı?')) { foods = []; localStorage.removeItem('foods_v13'); loadNutrition(); } }
+
+        // --- ADIM SAYACI MANTIĞI ---
+        let stepHistory = JSON.parse(localStorage.getItem('steps_v13')) || [];
+        const STEP_TARGET = 10000;
+
+        function addSteps() {
+            const stepVal = Number(document.getElementById('step-input').value);
+            if(!stepVal || stepVal <= 0) return alert('Lütfen geçerli bir adım sayısı girin.');
+            
+            const today = new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'short' });
+            
+            // Eğer bugün zaten bir kayıt girildiyse üstüne ekle, yoksa yeni gün oluştur
+            const existingDayIndex = stepHistory.findIndex(item => item.date === today);
+            if(existingDayIndex !== -1) {
+                stepHistory[existingDayIndex].steps += stepVal;
+            } else {
+                stepHistory.unshift({ date: today, steps: stepVal });
+            }
+            
+            localStorage.setItem('steps_v13', JSON.stringify(stepHistory));
+            document.getElementById('step-input').value = '';
+            loadSteps();
+        }
+
+        function loadSteps() {
+            const historyList = document.getElementById('step-history-list');
+            historyList.innerHTML = '';
+            
+            let todaysSteps = 0;
+            const today = new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'short' });
+            
+            // Bugünün adımını bul
+            const todayRecord = stepHistory.find(item => item.date === today);
+            if(todayRecord) todaysSteps = todayRecord.steps;
+
+            // Geçmişi listele
+            stepHistory.forEach((item, index) => {
+                historyList.innerHTML += `<div class="list-item" style="border-left-color: #0284c7;"><span>${item.date}: <b>${item.steps.toLocaleString()}</b> adım</span><button class="delete-btn" onclick="deleteStepDay(${index})">Sil</button></div>`;
+            });
+
+            // Arayüz barını ve metinleri güncelle
+            document.getElementById('step-summary').innerText = `${todaysSteps.toLocaleString()} / ${STEP_TARGET.toLocaleString()} Adım`;
+            const percent = Math.min(Math.round((todaysSteps / STEP_TARGET) * 100), 100);
+            document.getElementById('step-percent').innerText = `%${percent} Tamamlandı`;
+            document.getElementById('step-bar').style.width = percent + '%';
+        }
+
+        function deleteStepDay(index) { stepHistory.splice(index, 1); localStorage.setItem('steps_v13', JSON.stringify(stepHistory)); loadSteps(); }
+        function clearSteps() { if(confirm('Tüm adım geçmişi sıfırlansın mı?')) { stepHistory = []; localStorage.removeItem('steps_v13'); loadSteps(); } }
+
+        // --- ANTRENMAN ---
+        const programTemplates = {
+            itish: ["Bench Press (4 Set)", "Incline Dumbbell Press (3 Set)", "Push-up Bar Şınav (Max Rep)", "Overhead Press (3 Set)", "Triceps Pushdown (4 Set)"],
+            cekish: ["Barfiks / Lat Pulldown (4 Set)", "Dumbbell Row (3 Set)", "Face Pull (3 Set)", "Biceps Curl (4 Set)", "Hammer Curl (3 Set)"],
+            bacak: ["Squat (4 Set)", "Leg Press (3 Set)", "Romanian Deadlift (3 Set)", "Calf Raise (4 Set)", "Plank (3 Set Azami)"]
+        };
+        let currentActiveWorkout = JSON.parse(localStorage.getItem('active_workout_v13')) || [];
+        function loadWorkoutTemplate(type) { currentActiveWorkout = programTemplates[type].map(name => ({ name, done: false })); localStorage.setItem('active_workout_v13', JSON.stringify(currentActiveWorkout)); renderTemplateWorkouts(); }
+        function toggleWorkoutItem(index) { currentActiveWorkout[index].done = !currentActiveWorkout[index].done; localStorage.setItem('active_workout_v13', JSON.stringify(currentActiveWorkout)); }
+        function renderTemplateWorkouts() {
+            const area = document.getElementById('template-workout-list'); area.innerHTML = '';
+            if(currentActiveWorkout.length === 0) { area.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:10px;">Yukarıdan bir gün seçip programı yükle.</div>'; return; }
+            currentActiveWorkout.forEach((item, index) => { const checkedAttr = item.done ? 'checked' : ''; area.innerHTML += `<div class="check-item"><label><input type="checkbox" ${checkedAttr} onchange="toggleWorkoutItem(${index})"> ${item.name}</label></div>`; });
+        }
+
+        // --- SUPPLEMENT & STREAK ---
+        function saveSupps() { localStorage.setItem('supps_v13', JSON.stringify({ protein: document.getElementById('supp-protein').checked, creatine: document.getElementById('supp-creatine').checked, vitamin: document.getElementById('supp-vitamin').checked })); }
+        function loadSupps() { const supps = JSON.parse(localStorage.getItem('supps_v13')) || { protein: false, creatine: false, vitamin: false }; document.getElementById('supp-protein').checked = supps.protein; document.getElementById('supp-creatine').checked = supps.creatine; document.getElementById('supp-vitamin').checked = supps.vitamin; }
+
+        let streak = Number(localStorage.getItem('streak_v13')) || 0;
+        function loadStreak() { document.getElementById('streak-val').innerText = streak + " Gün"; }
+        function updateStreak(val) { if(val === -1) { if(confirm('Sıfırlansın mı?')) streak = 0; } else { streak += 1; } localStorage.setItem('streak_v13', streak); loadStreak(); }
+        let showerCount = Number(localStorage.getItem('shower_v13')) || 0;
+        function loadShower() { document.getElementById('shower-val').innerText = showerCount + " Kez"; }
+        function addShower() { showerCount += 1; localStorage.setItem('shower_v13', showerCount); loadShower(); }
+    </script>
+</body>
+</html>
